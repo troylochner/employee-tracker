@@ -16,18 +16,133 @@ connection.connect(function (err) {
     //connection.end();
 });
 
-const getTables = () =>{
+let x = []; 
+
+console.log("Welcome to the employee tracker database !\n\n")
+
+const startPage = () =>{
+    return inquirer
+    .prompt([{
+        type:"list",
+        name:"action",
+        message:"Select a Database Section:",
+        choices:["Employees","Roles","Departments","Quit"],    
+    }])
+    .then ((data)=> {
+        switch (data.action) {
+            case "Employees":
+            console.log("startPage -> case:", data.action);
+            employeeActionsMenu();
+            break;
+            case "Roles":
+            console.log("startPage -> case:", data.action);
+            showRoles();
+            break;
+            case "Departments":
+            console.log("startPage -> case:", data.action);
+            showDepartments();
+            break;
+            case "Quit":
+            console.log("startPage -> case:", data.action); 
+            console.log(x)
+            connection.end();
+        }
+    });
+};
+
+
+
+
+const employeeActionsMenu = () =>{
+    return inquirer
+    .prompt([{
+        type:"list",
+        name:"action",
+        message:"What would you like to do?",
+        choices:["Show All","Find","Add New","Go Back"], 
+    }])
+    .then((data)=> {
+        switch (data.action) {
+            case "Show All":
+            console.log("startPage -> case:", data.action);
+            showEmployees();
+            break;
+            case "Find":
+            console.log("startPage -> case:", data.action);
+            //showRoles();
+            break;
+            case "Add New":
+            console.log("startPage -> case:", data.action);
+            createEmployee();
+            break;
+            case "Go Back":
+            console.log("startPage -> case:", data.action);
+            startPage();
+            break;
+        }
+    });
+};
+
+const departmentActionsMenu = () =>{};
+const roleActionsMenu = () =>{};
+
+const showEmployees=()=>{
     var query = connection.query(
-        "SHOW TABLES",
+        "SELECT * FROM employee limit 10",
         function(err,res){
+            if(err) throw err ;
+            x = (res)
+            for (i = 0 ; i < res.length ; i++){
+                console.log(`${res[i].id} - ${res[i].last_name}, ${res[i].first_name}`)
+
+            }
+            employeeActionsMenu();
+        });
+};
+
+const showDepartments=()=>{
+    var query = connection.query(
+        "SELECT * FROM department",
+        function(err,res){
+            if(err) throw err ;
+            console.log(res);
+            startPage();
+        });
+};
+
+const showRoles = () => {
+    var query = connection.query(
+        "SELECT * FROM role",
+        function (err, res) {
             if (err) throw err;
             console.log(res);
-        }
-    );
-}
+            startPage();
+        });
+};
 
 const getEmployee=(id) =>{};
 const getDepartment=(id)=>{};
 const getRole=(id)=>{};
 
-getTables();
+const createEmployee=()=>{
+ return inquirer
+    .prompt([{
+        type: "input",
+        name: "first_name",
+        message: "First Name:"
+    }, {
+        type:"input",
+        name:"last_name",
+        message:"Last Name"
+    }
+ ])
+ .then ((data)=> {
+     console.log(data);
+ });
+
+};
+const createDepartment=()=>{};
+const createRole=()=>{};
+
+
+startPage();

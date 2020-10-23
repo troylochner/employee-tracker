@@ -1,7 +1,7 @@
 let mysql = require("mysql");
 let inquirer = require("inquirer");
 let express = require("express");
-let table = require("table");
+//let table = require("table");
 
 
 let connection = mysql.createConnection({
@@ -11,6 +11,7 @@ let connection = mysql.createConnection({
     password: "Wink1984",
     database: "greatbay_db"
 })
+
 
 
 connection.connect(function (err) {
