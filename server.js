@@ -128,19 +128,26 @@ const createEmployee=()=>{
         type:"input",
         name:"last_name",
         message:"Last Name"
-    },
-    {
-        type:"list",
-        name:"role",
-        message:"Choose a Role",
-        choices: roleArray
-    }
+    },{
+        name: "role",
+        type: "list",
+        message: "What is the employee's role?",
+        choices: roleArray,
+      },{
+        name: "manager",
+        type: "list",
+        message: "Who is this employee's Manager?",
+        choices: employeeArray,
+      },
+    
 
 
  ])
  .then ((data)=> {
-        var query = "INSERT INTO employee (first_name,last_name) VALUES (?,?)";
-       connection.query(query, [data.first_name, data.last_name] , function(err, res) {
+     //CONVERT STRINGS TO IDS BEFORE POSTING
+
+     var query = "INSERT INTO employee (first_name,last_name,role_id,manager_id) VALUES (?,?,?,?)";
+       connection.query(query, [data.first_name, data.last_name, data.role,data.manager] , function(err, res) {
         if (err) throw err;
         showEmployees()});
  });
