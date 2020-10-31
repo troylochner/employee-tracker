@@ -141,7 +141,7 @@ const roleActionsMenu = () =>{
 
 const showEmployees=()=>{
     var query = connection.query(
-        "SELECT * FROM employee limit 10",
+        "SELECT * FROM employee limit 25",
         function(err,res){
             if(err) throw err ;
             x = (res)
@@ -157,7 +157,10 @@ const showDepartments=()=>{
         "SELECT * FROM department",
         function(err,res){
             if(err) throw err ;
-            console.log(res);
+            x = (res)
+            for (i = 0 ; i < res.length ; i++){
+                console.log(`${res[i].id} - ${res[i].name}`)
+            }
             startPage();
         });
 };
@@ -167,12 +170,15 @@ const showRoles = () => {
         "SELECT * FROM role",
         function (err, res) {
             if (err) throw err;
-            console.log(res);
+            x = (res)
+            for (i = 0 ; i < res.length ; i++){
+                console.log(`${res[i].id} - ${res[i].name}`)
+            }
             startPage();
         });
 };
 
-const getEmployee=(id) =>{};
+const selectEmployee=(id) =>{};
 const getDepartment=(id)=>{};
 const getRole=(id)=>{};
 
@@ -189,17 +195,10 @@ const createEmployee=()=>{
     }
  ])
  .then ((data)=> {
-     
-    var query = connection.query(
-        "INSERT * FROM department",
-        function(err,res){
-            if(err) throw err ;
-            console.log(res);
-            startPage();
-        });
-
-
-
+        var query = "INSERT INTO employee (first_name,last_name) VALUES (?,?)";
+       connection.query(query, [data.first_name, data.last_name] , function(err, res) {
+        if (err) throw err;
+        showEmployees()});
  });
 };
 
@@ -207,16 +206,16 @@ const createRole=()=>{
     return inquirer
        .prompt([{
            type: "input",
-           name: "name",
+           name: "first_name",
            message: "Role Title:"
        }, {
            type:"input",
-           name:"salary",
+           name:"last_name",
            message:"Salary Amount:"
        }
     ])
     .then ((data)=> {
-        var query = "INSERT INTO role (name,salary) VALUES (?,?)";
+        var query = "INSERT INTO employee (name,salary) VALUES (?,?)";
        connection.query(query, [data.name, data.salary] , function(err, res) {
         if (err) throw err;
         showRoles()});
