@@ -41,7 +41,7 @@ const homeMenu = [
         "View All Departments",
         "Add Department",
         "View All Employees By Role",
-        "View All Employees By Department",     
+        "Show All Employees By Department",     
         "Exit",
       ],
     },
@@ -63,21 +63,21 @@ function startPage() {
         case "View All Employees":
           showEmployees();
           break;
-        /*case "View All Employees By Role":
-          viewByRole();
-          break;*/
-        /*case "View All Employees By Department":
-          viewByDepartment();
-          break;*/
+        case "View All Employees By Role":
+          showAllByRoll();
+          break;
+        case "Show All Employees By Department":
+            showAllByDepartment();
+          break;
         case "View All Roles":
           showRoles();
           break;
         case "View All Departments":
           showDepartments();
           break;
-        /*case "Update An Employee Role":
+        case "Update An Employee Role":
           updateEmployee();
-          break;*/
+          break;
         case "Exit":
           connection.end();
           break;
@@ -87,22 +87,26 @@ function startPage() {
     });
     // update arrays each time the init function is called
     getDepartmentList();
+    //console.log(deptArray)
     getRoleList();
-    getEmployeeList;
+    //console.log(roleArray)
+    getEmployeeList();
+    //console.log(employeeArray)
   }
 
 
 
 //EMPLOYEES
 function getEmployeeList() {
-    connection.query(`SELECT last_name FROM employee`, function (err,res) {
+    connection.query("SELECT last_name FROM employee", function (err,res) {
       if (err) throw err;
       employeeArray = [];
       for (i = 0; i < res.length; i++) {
         employeeArray.push(res[i].last_name);
-      }
+      };
     });
   }
+
 
   const showEmployees=()=>{
     var query = connection.query(
@@ -142,11 +146,9 @@ const createEmployee=()=>{
  });
 };
 
-
-
 //DEPARTMENTS
   function getDepartmentList() {
-    connection.query(`SELECT name FROM department`, function (err,res) {
+    connection.query("SELECT name FROM department", function (err,res) {
       if (err) throw err;
       deptArray = [];
       for (i = 0; i < res.length; i++) {
@@ -165,6 +167,20 @@ const createEmployee=()=>{
         });
 };
 
+   function showAllByDepartment() {
+    connection.query(
+      `SELECT employee.id, employee.first_name, employee.last_name, department.name FROM employee 
+    LEFT JOIN role ON employee.role_id = role.id
+    LEFT JOIN department ON role.id = department.id 
+    ORDER BY department.name`,
+      function (err, data) {
+        if (err) throw err;
+        console.table(data);
+        startPage();
+      }
+    );
+  } 
+
 const createDepartment=()=>{
     return inquirer
        .prompt([{
@@ -182,9 +198,10 @@ const createDepartment=()=>{
    };
 
 
+
  //ROLES 
   function getRoleList() {
-    connection.query(`SELECT name FROM role`, function (err,res) {
+    connection.query("SELECT name FROM role", function (err,res) {
       if (err) throw err;
       roleArray = [];
       for (i = 0; i < res.length; i++) {
@@ -202,6 +219,20 @@ const createDepartment=()=>{
             startPage();
         });
 };
+
+function showAllByRoll() {
+    connection.query(
+      `SELECT employee.id, employee.first_name, employee.last_name, role.name, role.salary, department.name FROM employee 
+      LEFT JOIN role ON employee.role_id = role.id
+      LEFT JOIN department ON role.department_id = department.id 
+      ORDER BY role.name`,
+      function (err, data) {
+        if (err) throw err;
+        console.table(data);
+        startPage();
+      }
+    );
+  }
 
 const createRole=()=>{
     return inquirer
@@ -227,3 +258,51 @@ const createRole=()=>{
 const selectEmployee=(id) =>{};
 const getDepartment=(id)=>{};
 const getRole=(id)=>{};
+
+function updateEmployee() {
+    connection.query(
+      `SELECT concat(employee.first_name, ' ' ,  employee.last_name) AS Name FROM employee`,
+      function (err, employees) {
+        if (err) throw err;
+        employeeArray = [];
+        for (i = 0; i < employees.length; i++) {
+            employeeArray.push(employees[i].Name);
+        }
+        connection.query("SELECT * FROM role", function (err, res2) {
+          if (err) throw err;
+          inquirer
+            .prompt([
+              {
+                name: "employeeChoice",
+                type: "list",
+                message: "Which employee would you like to update?",
+                choices: employeeArray ,
+              },
+              {
+                name: "roleChoice",
+                type: "list",
+                message: "What is the employee's new role?",
+                choices: roleArray,
+              },
+            ])
+            .then(function (answer) {
+              let roleID;
+              for (let r = 0; r < res2.length; r++) {
+                if (res2[r].title == answer.roleChoice) {
+                  roleID = res2[r].role_id;
+                }
+              }
+              // when finished prompting, update the db with that info
+              connection.query(
+                `UPDATE employee SET role_id = ? WHERE id = (SELECT id FROM(SELECT id FROM employee WHERE CONCAT(first_name," ",last_name) = ?)AS NAME)`,
+                [roleID, answer.employeeChoice],
+                function (err) {
+                  if (err) throw err;
+                }
+              );
+              startPage();
+            });
+        });
+      }
+    );
+  }
