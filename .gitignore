@@ -1,3 +1,5 @@
 node_modules
 .DS_STORE
 gb-server.js
+class_readme.md
+test.js

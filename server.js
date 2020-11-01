@@ -6,15 +6,13 @@ const cTable = require("console.table");
 let deptArray = [];
 let roleArray = [];
 let employeeArray = [];
-//let managerArr = [];
-
-
+let managerArr = [];
 
 let connection = mysql.createConnection({
     host: "localhost",
     port: 3306,
-    user: "root",
-    password: "Wink1984",
+    user: "test_user",
+    password: "testPW",
     database: "employee_manager"
 });
 
@@ -24,18 +22,17 @@ connection.connect(function (err) {
     startPage();
 });
 
-
-console.log("Welcome to the employee tracker database !\n\n")
-
+//MAKE THE HOME MENU
 const homeMenu = [
     {
       type: "list",
       name: "action",
       message: "What would you like to do?",
       choices: [
+        "Test",
         "View All Employees",
         "Add Employee",
-        "Update An Employee Role",
+        /*"Update An Employee Role",*/
         "View All Roles",
         "Add Role",
         "View All Departments",
@@ -64,7 +61,7 @@ function startPage() {
           showEmployees();
           break;
         case "View All Employees By Role":
-          showAllByRoll();
+        showAllByRole();
           break;
         case "Show All Employees By Department":
             showAllByDepartment();
@@ -78,6 +75,10 @@ function startPage() {
         case "Update An Employee Role":
           updateEmployee();
           break;
+        case "Test":
+          test();
+          
+          break;
         case "Exit":
           connection.end();
           break;
@@ -85,16 +86,11 @@ function startPage() {
           connection.end();
       }
     });
-    // update arrays each time the init function is called
     getDepartmentList();
-    //console.log(deptArray)
     getRoleList();
-    //console.log(roleArray)
     getEmployeeList();
-    //console.log(employeeArray)
+
   }
-
-
 
 //EMPLOYEES
 function getEmployeeList() {
@@ -110,7 +106,7 @@ function getEmployeeList() {
 
   const showEmployees=()=>{
     var query = connection.query(
-        "SELECT * FROM employee limit 25",
+        "SELECT * FROM employee",
         function(err,res){
             if(err) throw err ;
             console.table(res);
@@ -138,178 +134,128 @@ const createEmployee=()=>{
         type: "list",
         message: "Who is this employee's Manager?",
         choices: employeeArray,
-      },
+      }
     
-
-
- ])
- .then ((data)=> {
-     //CONVERT STRINGS TO IDS BEFORE POSTING
-
-     var query = "INSERT INTO employee (first_name,last_name,role_id,manager_id) VALUES (?,?,?,?)";
-       connection.query(query, [data.first_name, data.last_name, data.role,data.manager] , function(err, res) {
+ ]).then ((data)=> {
+     //CONVERT STRINGS TO IDS BEFORE POSTING // NOT WORKING
+     var query = "INSERT INTO employee (first_name,last_name) VALUES (?,?)";
+       connection.query(query, [data.first_name, data.last_name] , function(err, res) {
         if (err) throw err;
         showEmployees()});
- });
-};
+ })};
+ 
 
 //DEPARTMENTS
-  function getDepartmentList() {
-    connection.query("SELECT name FROM department", function (err,res) {
-      if (err) throw err;
-      deptArray = [];
-      for (i = 0; i < res.length; i++) {
-        deptArray.push(res[i].name);
-      }
-    });
-  }
+function getDepartmentList() {
+connection.query("SELECT name FROM department", function (err,res) {
+    if (err) throw err;
+    deptArray = [];
+    for (i = 0; i < res.length; i++) {
+    deptArray.push(res[i].name);
+    }
+})}
 
-  const showDepartments=()=>{
-    var query = connection.query(
-        "SELECT * FROM department",
-        function(err,res){
-            if(err) throw err ;
-            console.table(res);
+const showDepartments=()=>{
+var query = connection.query(
+    "SELECT * FROM department",
+    function(err,res){
+        if(err) throw err ;
+        console.table(res);
+        startPage();
+})}
+
+function showAllByDepartment() {
+    connection.query(
+        `SELECT employee.id, employee.first_name, employee.last_name, department.name FROM employee 
+        LEFT JOIN role ON employee.role_id = role.id
+        LEFT JOIN department ON role.id = department.id 
+        ORDER BY department.name`,
+        function (err, data) {
+            if (err) throw err;
+            console.table(data);
             startPage();
         });
-};
+}
 
-   function showAllByDepartment() {
-    connection.query(
-      `SELECT employee.id, employee.first_name, employee.last_name, department.name FROM employee 
-    LEFT JOIN role ON employee.role_id = role.id
-    LEFT JOIN department ON role.id = department.id 
-    ORDER BY department.name`,
-      function (err, data) {
-        if (err) throw err;
-        console.table(data);
-        startPage();
-      }
-    );
-  } 
-
-const createDepartment=()=>{
+const createDepartment = () => {
     return inquirer
-       .prompt([{
-           type: "input",
-           name: "name",
-           message: "Department Name:"
-       }
-    ])
-    .then ((data)=> {
-        var query = "INSERT INTO department (name) VALUES (?)";
-       connection.query(query, data.name , function(err, res) {
-        if (err) throw err;
-        showDepartments()});
-    });
-   };
+        .prompt([{
+            type: "input",
+            name: "name",
+            message: "Department Name:"
+        }])
+        .then((data) => {
+            var query = "INSERT INTO department (name) VALUES (?)";
+            connection.query(query, data.name, function (err, res) {
+                if (err) throw err;
+                showDepartments()
+            });
+        });
+};
 
 
 
  //ROLES 
   function getRoleList() {
-    connection.query("SELECT name FROM role", function (err,res) {
-      if (err) throw err;
-      roleArray = [];
-      for (i = 0; i < res.length; i++) {
-        roleArray.push(res[i].name);
-      };
-    });
+      connection.query("SELECT name FROM role", function (err, res) {
+          if (err) throw err;
+          roleArray = [];
+          for (i = 0; i < res.length; i++) {
+              roleArray.push(res[i].name);
+          };
+      });
   }
 
-  const showRoles=() => {
-    var query = connection.query(
-        "SELECT * FROM role",
-        function (err, res) {
-            if (err) throw err;
-            console.table(res);
-            startPage();
-        });
-};
-
-function showAllByRoll() {
+  const showRoles = () => {
+      var query = connection.query(
+          "SELECT * FROM role",
+          function (err, res) {
+              if (err) throw err;
+              console.table(res);
+              startPage();
+          });
+  };
+function showAllByRole() {
     connection.query(
-      `SELECT employee.id, employee.first_name, employee.last_name, role.name, role.salary, department.name FROM employee 
+        `SELECT employee.id, employee.first_name, employee.last_name, role.name, role.salary, department.name FROM employee 
       LEFT JOIN role ON employee.role_id = role.id
       LEFT JOIN department ON role.department_id = department.id 
       ORDER BY role.name`,
-      function (err, data) {
-        if (err) throw err;
-        console.table(data);
-        startPage();
-      }
-    );
-  }
-
-const createRole=()=>{
-    return inquirer
-       .prompt([{
-           type: "input",
-           name: "first_name",
-           message: "Role Title:"
-       }, {
-           type:"input",
-           name:"last_name",
-           message:"Salary Amount:"
-       }
-    ])
-    .then ((data)=> {
-        var query = "INSERT INTO employee (name,salary) VALUES (?,?)";
-       connection.query(query, [data.name, data.salary] , function(err, res) {
-        if (err) throw err;
-        showRoles()});
-    });
-   };
-
-//UNUSED AT CURRENT MOMENT
-const selectEmployee=(id) =>{};
-const getDepartment=(id)=>{};
-const getRole=(id)=>{};
-
-function updateEmployee() {
-    connection.query(
-      `SELECT concat(employee.first_name, ' ' ,  employee.last_name) AS Name FROM employee`,
-      function (err, employees) {
-        if (err) throw err;
-        employeeArray = [];
-        for (i = 0; i < employees.length; i++) {
-            employeeArray.push(employees[i].Name);
+        function (err, data) {
+            if (err) throw err;
+            console.table(data);
+            startPage();
         }
-        connection.query("SELECT * FROM role", function (err, res2) {
-          if (err) throw err;
-          inquirer
-            .prompt([
-              {
-                name: "employeeChoice",
-                type: "list",
-                message: "Which employee would you like to update?",
-                choices: employeeArray ,
-              },
-              {
-                name: "roleChoice",
-                type: "list",
-                message: "What is the employee's new role?",
-                choices: roleArray,
-              },
-            ])
-            .then(function (answer) {
-              let roleID;
-              for (let r = 0; r < res2.length; r++) {
-                if (res2[r].title == answer.roleChoice) {
-                  roleID = res2[r].role_id;
-                }
-              }
-              // when finished prompting, update the db with that info
-              connection.query(
-                `UPDATE employee SET role_id = ? WHERE id = (SELECT id FROM(SELECT id FROM employee WHERE CONCAT(first_name," ",last_name) = ?)AS NAME)`,
-                [roleID, answer.employeeChoice],
-                function (err) {
-                  if (err) throw err;
-                }
-              );
-              startPage();
+    );
+}
+
+const createRole = () => {
+    return inquirer
+        .prompt([{
+            type: "input",
+            name: "name",
+            message: "Role Title:"
+        }, {
+            type: "input",
+            name: "salary",
+            message: "Salary Amount:"
+        }])
+        .then((data) => {
+            var query = "INSERT INTO role (name,salary) VALUES (?,?)";
+            connection.query(query, [data.name, data.salary], function (err, res) {
+                if (err) throw err;
+                showRoles()
             });
         });
-      }
-    );
-  }
+};
+
+
+function test() {
+    let roles = connection.query("SELECT id,name FROM role", function (err, res) {
+        if (err) throw err;
+        res
+    });
+    console.log(roles)
+
+    startPage();
+}
