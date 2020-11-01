@@ -138,10 +138,14 @@ const createEmployee=()=>{
     
  ]).then ((data)=> {
      //CONVERT STRINGS TO IDS BEFORE POSTING // NOT WORKING
-     var query = "INSERT INTO employee (first_name,last_name) VALUES (?,?)";
-       connection.query(query, [data.first_name, data.last_name] , function(err, res) {
-        if (err) throw err;
-        showEmployees()});
+     //NOT THE PRETTIEST WAY TO DO THIS -- BUT IT DOES WORK -- WOULD NOT WORK WELL AT LARGE SCALE I ASSUME
+     var query = `
+     INSERT INTO employee (first_name,last_name,role_id,manager_id) 
+     VALUES (?,?,(SELECT id FROM role WHERE name = ?),(SELECT emp.id FROM employee emp WHERE emp.last_name = ?) )`
+     connection.query(query, [data.first_name, data.last_name, data.role, data.manager], function (err, res) {
+         if (err) throw err;
+         showEmployees()
+     });
  })};
  
 
