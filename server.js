@@ -32,7 +32,7 @@ const homeMenu = [
         "Test",
         "View All Employees",
         "Add Employee",
-        /*"Update An Employee Role",*/
+        "Update An Employee Role",
         "View All Roles",
         "Add Role",
         "View All Departments",
@@ -73,7 +73,7 @@ function startPage() {
           showDepartments();
           break;
         case "Update An Employee Role":
-          updateEmployee();
+            updateEmployeeRole();
           break;
         case "Test":
           test();
@@ -243,23 +243,50 @@ const createRole = () => {
             type: "input",
             name: "salary",
             message: "Salary Amount:"
-        }])
+        },
+        {
+            name: "department",
+            type: "list",
+            message: "Department:",
+            choices: deptArray,
+          }])
         .then((data) => {
-            var query = "INSERT INTO role (name,salary) VALUES (?,?)";
-            connection.query(query, [data.name, data.salary], function (err, res) {
+            var query = `INSERT INTO role (name,salary,department_id) 
+            VALUES (?,?,(SELECT id FROM department WHERE name = ?))`;
+            connection.query(query, [data.name, data.salary,data.department], function (err, res) {
                 if (err) throw err;
                 showRoles()
             });
         });
 };
 
+const updateEmployeeRole = () => {
+    return inquirer
+        .prompt([
+        {
+            name: "employee",
+            type: "list",
+            message: "Select Employee :",
+            choices: employeeArray,
+          },
+          {
+            name: "role",
+            type: "list",
+            message: "New Role:",
+            choices: roleArray,
+          }
+        ])
+        .then((data) => {
+            var query = `
+            UPDATE employee  
+            SET role_id = ( 
+                SELECT id FROM role WHERE name = ?
+                )
+            WHERE last_name = ?`;
+            connection.query(query, [data.role, data.employee], function (err, res) {
+                if (err) throw err;
+                showRoles()
+            });
+        });
+};
 
-function test() {
-    let roles = connection.query("SELECT id,name FROM role", function (err, res) {
-        if (err) throw err;
-        res
-    });
-    console.log(roles)
-
-    startPage();
-}
