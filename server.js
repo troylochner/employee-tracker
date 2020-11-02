@@ -93,21 +93,25 @@ function startPage() {
   }
 
 //EMPLOYEES
-function getEmployeeList() {
-    connection.query("SELECT last_name FROM employee", function (err,res) {
+const getEmployeeList=()=> {
+    var query = `SELECT CONCAT(last_name,', ',first_name) AS 'name' FROM employee`
+    connection.query(query, function (err,res) {
       if (err) throw err;
       employeeArray = [];
       for (i = 0; i < res.length; i++) {
-        employeeArray.push(res[i].last_name);
+        employeeArray.push(res[i].name);
       };
     });
   }
 
 
   const showEmployees=()=>{
-    var query = connection.query(
-        "SELECT * FROM employee",
-        function(err,res){
+    var query = `
+    SELECT e.last_name,e.first_name,r.name 'Role',Concat(m.last_name,', ',m.first_name) AS 'Manager'
+    FROM employee e
+    LEFT JOIN role r ON e.role_id=r.id
+    LEFT JOIN employee m ON e.manager_id=m.id`
+    connection.query(query,function(err,res){
             if(err) throw err ;
             console.table(res);
             startPage();
@@ -137,11 +141,8 @@ const createEmployee=()=>{
       }
     
  ]).then ((data)=> {
-     //CONVERT STRINGS TO IDS BEFORE POSTING // NOT WORKING
-     //NOT THE PRETTIEST WAY TO DO THIS -- BUT IT DOES WORK -- WOULD NOT WORK WELL AT LARGE SCALE I ASSUME
-     var query = `
-     INSERT INTO employee (first_name,last_name,role_id,manager_id) 
-     VALUES (?,?,(SELECT id FROM role WHERE name = ?),(SELECT emp.id FROM employee emp WHERE emp.last_name = ?) )`
+     //NOT THE PRETTIEST WAY TO DO THIS -- BUT IT DOES WORK -- WOULD NOT WORK EFFICIENTLY AT LARGE SCALE I ASSUME
+     var query = `INSERT INTO employee (first_name,last_name,role_id,manager_id) VALUES (?,?,(SELECT id FROM role WHERE name = ?),(SELECT emp.id FROM employee emp WHERE CONCAT(emp.last_name,', ',emp.first_name) = ?) )`
      connection.query(query, [data.first_name, data.last_name, data.role, data.manager], function (err, res) {
          if (err) throw err;
          showEmployees()
@@ -150,35 +151,37 @@ const createEmployee=()=>{
  
 
 //DEPARTMENTS
-function getDepartmentList() {
-connection.query("SELECT name FROM department", function (err,res) {
-    if (err) throw err;
-    deptArray = [];
-    for (i = 0; i < res.length; i++) {
-    deptArray.push(res[i].name);
-    }
-})}
+const getDepartmentList=()=> {
+    var query = `SELECT name FROM department`
+    connection.query(query, function (err, res) {
+        if (err) throw err;
+        deptArray = [];
+        for (i = 0; i < res.length; i++) {
+            deptArray.push(res[i].name);
+        }
+    })
+}
 
-const showDepartments=()=>{
-var query = connection.query(
-    "SELECT * FROM department",
-    function(err,res){
-        if(err) throw err ;
-        console.table(res);
-        startPage();
-})}
+const showDepartments = () => {
+    var query = `SELECT * FROM department`
+    connection.query(query,
+        function (err, res) {
+            if (err) throw err;
+            console.table(res);
+            startPage();
+        })
+}
 
 function showAllByDepartment() {
-    connection.query(
-        `SELECT employee.id, employee.first_name, employee.last_name, department.name FROM employee 
-        LEFT JOIN role ON employee.role_id = role.id
-        LEFT JOIN department ON role.id = department.id 
-        ORDER BY department.name`,
-        function (err, data) {
-            if (err) throw err;
-            console.table(data);
-            startPage();
-        });
+    query = `SELECT employee.id, employee.first_name, employee.last_name, department.name FROM employee 
+    LEFT JOIN role ON employee.role_id = role.id
+    LEFT JOIN department ON role.id = department.id 
+    ORDER BY department.name`
+    connection.query(query, function (err, data) {
+        if (err) throw err;
+        console.table(data);
+        startPage();
+    });
 }
 
 const createDepartment = () => {
@@ -197,40 +200,41 @@ const createDepartment = () => {
         });
 };
 
-
-
  //ROLES 
-  function getRoleList() {
-      connection.query("SELECT name FROM role", function (err, res) {
-          if (err) throw err;
-          roleArray = [];
-          for (i = 0; i < res.length; i++) {
-              roleArray.push(res[i].name);
-          };
-      });
-  }
+ function getRoleList() {
+     query = `SELECT name FROM role`
+     connection.query(query, function (err, res) {
+         if (err) throw err;
+         roleArray = [];
+         for (i = 0; i < res.length; i++) {
+             roleArray.push(res[i].name);
+         };
+     });
+ }
 
   const showRoles = () => {
-      var query = connection.query(
-          "SELECT * FROM role",
-          function (err, res) {
-              if (err) throw err;
-              console.table(res);
-              startPage();
-          });
+      var query = `
+      SELECT r.name 'Role Name',r.salary 'Salary', d.name 'Department Name'
+      FROM role r
+      LEFT JOIN department d ON r.department_id = d.id
+      `
+      connection.query(query, function (err, res) {
+          if (err) throw err;
+          console.table(res);
+          startPage();
+      });
   };
 function showAllByRole() {
-    connection.query(
-        `SELECT employee.id, employee.first_name, employee.last_name, role.name, role.salary, department.name FROM employee 
-      LEFT JOIN role ON employee.role_id = role.id
-      LEFT JOIN department ON role.department_id = department.id 
-      ORDER BY role.name`,
-        function (err, data) {
-            if (err) throw err;
-            console.table(data);
-            startPage();
-        }
-    );
+    var query = `
+    SELECT employee.id, employee.first_name, employee.last_name, role.name, role.salary, department.name FROM employee 
+    LEFT JOIN role ON employee.role_id = role.id
+    LEFT JOIN department ON role.department_id = department.id 
+    ORDER BY role.name`
+    connection.query(query, function (err, data) {
+        if (err) throw err;
+        console.table(data);
+        startPage();
+    });
 }
 
 const createRole = () => {
@@ -266,7 +270,7 @@ const updateEmployeeRole = () => {
         {
             name: "employee",
             type: "list",
-            message: "Select Employee :",
+            message: "Select Employee:",
             choices: employeeArray,
           },
           {
@@ -282,11 +286,10 @@ const updateEmployeeRole = () => {
             SET role_id = ( 
                 SELECT id FROM role WHERE name = ?
                 )
-            WHERE last_name = ?`;
+            WHERE CONCAT(last_name,', ',first_name) = ?`;
             connection.query(query, [data.role, data.employee], function (err, res) {
                 if (err) throw err;
-                showRoles()
+            showEmployees();
             });
         });
 };
-
